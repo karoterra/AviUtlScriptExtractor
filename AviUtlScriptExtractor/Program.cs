@@ -9,19 +9,19 @@ namespace AviUtlScriptExtractor
 {
     class Program
     {
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             if (args.Count() != 1)
             {
                 Console.Error.WriteLine("ファイル名を指定してください");
-                Environment.Exit(1);
+                return 1;
             }
             var sjis = Encoding.GetEncoding(932);
             string inputPath = args[0];
             if (!File.Exists(inputPath))
             {
                 Console.Error.WriteLine($"\"{inputPath}\"が見つかりません");
-                Environment.Exit(1);
+                return 1;
             }
 
             var anmScripts = new HashSet<string>();
@@ -103,33 +103,39 @@ namespace AviUtlScriptExtractor
                 }
             }
 
-            Console.WriteLine("# アニメーション効果");
-            foreach (var x in anmScripts)
+            var outputDir = Path.GetDirectoryName(inputPath);
+            var outputFilename = $"{Path.GetFileNameWithoutExtension(inputPath)}_scripts.txt";
+            var outputPath = Path.Combine(outputDir, outputFilename);
+            using (var sw = new StreamWriter(outputPath, false, sjis))
             {
-                Console.WriteLine(x);
-            }
-            Console.WriteLine("\n# カスタムオブジェクト");
-            foreach (var x in objScripts)
-            {
-                Console.WriteLine(x);
-            }
-            Console.WriteLine("\n# シーンチェンジ");
-            foreach (var x in scnScripts)
-            {
-                Console.WriteLine(x);
-            }
-            Console.WriteLine("\n# カメラ効果");
-            foreach (var x in camScripts)
-            {
-                Console.WriteLine(x);
-            }
-            Console.WriteLine("\n# トラックバースクリプト");
-            foreach (var x in traScripts)
-            {
-                Console.WriteLine(x);
+                sw.WriteLine("# アニメーション効果");
+                foreach(var x in anmScripts)
+                {
+                    sw.WriteLine(x);
+                }
+                sw.WriteLine("\n# カスタムオブジェクト");
+                foreach (var x in objScripts)
+                {
+                    sw.WriteLine(x);
+                }
+                sw.WriteLine("\n# シーンチェンジ");
+                foreach (var x in scnScripts)
+                {
+                    sw.WriteLine(x);
+                }
+                sw.WriteLine("\n# カメラ効果");
+                foreach (var x in camScripts)
+                {
+                    sw.WriteLine(x);
+                }
+                sw.WriteLine("\n# トラックバースクリプト");
+                foreach (var x in traScripts)
+                {
+                    sw.WriteLine(x);
+                }
             }
 
-            Console.ReadLine();
+            return 0;
         }
     }
 }

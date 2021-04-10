@@ -14,13 +14,17 @@ namespace AviUtlScriptExtractor
             if (args.Count() != 1)
             {
                 Console.Error.WriteLine("ファイル名を指定してください");
+                Console.WriteLine("終了するにはEnterを押してください...");
+                Console.ReadLine();
                 return 1;
             }
             var sjis = Encoding.GetEncoding(932);
             string inputPath = args[0];
             if (!File.Exists(inputPath))
             {
-                Console.Error.WriteLine($"\"{inputPath}\"が見つかりません");
+                Console.Error.WriteLine($"\"{inputPath}\" が見つかりません");
+                Console.WriteLine("終了するにはEnterを押してください...");
+                Console.ReadLine();
                 return 1;
             }
 
@@ -31,13 +35,46 @@ namespace AviUtlScriptExtractor
             var traScripts = new HashSet<string>();
 
             AviUtlProject project;
-            using (BinaryReader br = new BinaryReader(File.OpenRead(inputPath), sjis))
+            try
             {
-                project = new AviUtlProject(br);
+                using (BinaryReader br = new BinaryReader(File.OpenRead(inputPath), sjis))
+                {
+                    project = new AviUtlProject(br);
+                }
             }
+            catch (FileFormatException ex)
+            {
+                Console.Error.WriteLine($"\"{inputPath}\" はAviUtlプロジェクトファイルではないか破損している可能性があります。");
+                Console.Error.WriteLine($"詳細: {ex.Message}");
+                Console.WriteLine("終了するにはEnterを押してください...");
+                Console.ReadLine();
+                return 1;
+            }
+            catch (EndOfStreamException)
+            {
+                Console.Error.WriteLine($"\"{inputPath}\" はAviUtlプロジェクトファイルではないか破損している可能性があります。");
+                Console.Error.WriteLine($"詳細: ファイルの読み込み中に終端に達しました");
+                Console.WriteLine("終了するにはEnterを押してください...");
+                Console.ReadLine();
+                return 1;
+            }
+
             if (project.Filters.ContainsKey("拡張編集"))
             {
-                var exedit = new ExEdit(project.Filters["拡張編集"]);
+                ExEdit exedit;
+                try
+                {
+                    exedit = new ExEdit(project.Filters["拡張編集"]);
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    Console.Error.WriteLine("拡張編集データの読み込み中にエラーが発生しました。" +
+                        "拡張編集またはAviUtlが対応していないバージョンである可能性があります。");
+                    Console.Error.WriteLine("詳細: 配列のアクセス違反");
+                    Console.WriteLine("終了するにはEnterを押してください...");
+                    Console.ReadLine();
+                    return 1;
+                }
                 var animEffectType = exedit.ObjectTypes.ToList().FindIndex(x => x.Name == "アニメーション効果");
                 var customObjectType = exedit.ObjectTypes.ToList().FindIndex(x => x.Name == "カスタムオブジェクト");
                 var camEffectType = exedit.ObjectTypes.ToList().FindIndex(x => x.Name == "カメラ効果");
@@ -81,7 +118,7 @@ namespace AviUtlScriptExtractor
                         }
                     }
                     // カスタムオブジェクト
-                    if (obj.ObjectTypes[0]== customObjectType && obj.ExtData[0].Length > 0)
+                    if (obj.ObjectTypes[0] == customObjectType && obj.ExtData[0].Length > 0)
                     {
                         var name = obj.ExtData[0].Skip(4).Take(256).ToArray().ToSjisString();
                         if (name.Length > 0)
@@ -109,7 +146,7 @@ namespace AviUtlScriptExtractor
             using (var sw = new StreamWriter(outputPath, false, sjis))
             {
                 sw.WriteLine("# アニメーション効果");
-                foreach(var x in anmScripts)
+                foreach (var x in anmScripts)
                 {
                     sw.WriteLine(x);
                 }

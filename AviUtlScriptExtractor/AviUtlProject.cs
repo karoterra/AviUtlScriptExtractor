@@ -49,7 +49,7 @@ namespace AviUtlScriptExtractor
             var header = Sjis.GetString(reader.ReadBytes(32));
             if (header != Header)
             {
-                throw new FileFormatException("ヘッダが適切ではないためaupファイルではありません。");
+                throw new FileFormatException("AviUtl ProjectFileヘッダが見つかりません");
             }
 
             HandleSize = reader.ReadUInt32();

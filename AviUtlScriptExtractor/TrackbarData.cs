@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace AviUtlScriptExtractor
 {
     class TrackbarData
     {
-        public readonly Dictionary<int, string> TypeNames = new Dictionary<int, string>()
+        public static readonly Dictionary<int, string> TypeNames = new Dictionary<int, string>()
         {
             {0, "移動無し"},
             {1, "直線移動"},

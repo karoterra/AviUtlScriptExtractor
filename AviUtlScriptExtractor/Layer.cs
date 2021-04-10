@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 
 namespace AviUtlScriptExtractor
 {
@@ -12,16 +11,16 @@ namespace AviUtlScriptExtractor
         public uint Flag { get; }
         public string Name { get; }
 
-        public Layer(byte[] data)
+        public Layer(ReadOnlySpan<byte> data)
         {
             if (data.Length != Size)
             {
                 throw new ArgumentException($"dataサイズは{Size}である必要があります");
             }
-            SceneIndex = data.Take(4).ToArray().ParseUInt32();
-            LayerIndex = data.Skip(4).Take(4).ToArray().ParseUInt32();
-            Flag = data.Skip(8).Take(4).ToArray().ParseUInt32();
-            Name = data.Skip(12).ToArray().ToSjisString();
+            SceneIndex = data.Slice(0, 4).ParseUInt32();
+            LayerIndex = data.Slice(4, 4).ParseUInt32();
+            Flag = data.Slice(8, 4).ParseUInt32();
+            Name = data.Slice(12).ToSjisString();
         }
     }
 }

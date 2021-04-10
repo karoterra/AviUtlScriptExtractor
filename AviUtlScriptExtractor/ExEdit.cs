@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AviUtlScriptExtractor
 {
@@ -20,45 +16,45 @@ namespace AviUtlScriptExtractor
         public ObjectType[] ObjectTypes { get; }
         public TimelineObject[] Objects { get; }
 
-        public ExEdit(byte[] data)
+        public ExEdit(ReadOnlySpan<byte> data)
         {
-            ObjectTypeNum = data.Skip(4).Take(4).ToArray().ParseUInt32();
-            ObjectNum = data.Skip(8).Take(4).ToArray().ParseUInt32();
-            SceneNum = data.Skip(0x68).Take(4).ToArray().ParseUInt32();
-            LayerNum = data.Skip(0x6C).Take(4).ToArray().ParseUInt32();
-            TrackbarNum = data.Skip(0x7C).Take(4).ToArray().ParseUInt32();
+            ObjectTypeNum = data.Slice(4, 4).ParseUInt32();
+            ObjectNum = data.Slice(8, 4).ParseUInt32();
+            SceneNum = data.Slice(0x68, 4).ParseUInt32();
+            LayerNum = data.Slice(0x6C, 4).ParseUInt32();
+            TrackbarNum = data.Slice(0x7C, 4).ParseUInt32();
 
             int index = 0x100;
             Layers = new Layer[LayerNum];
             for (uint i = 0; i < LayerNum; i++)
             {
-                Layers[i] = new Layer(data.Skip(index).Take(Layer.Size).ToArray());
+                Layers[i] = new Layer(data.Slice(index, Layer.Size));
                 index += Layer.Size;
             }
             Scenes = new Scene[SceneNum];
             for (uint i = 0; i < SceneNum; i++)
             {
-                Scenes[i] = new Scene(data.Skip(index).Take(Scene.Size).ToArray());
+                Scenes[i] = new Scene(data.Slice(index, Scene.Size));
                 index += Scene.Size;
             }
             Trackbars = new string[TrackbarNum];
             for (uint i = 0; i < TrackbarNum; i++)
             {
-                Trackbars[i] = data.Skip(index).Take(128).ToArray().ToSjisString();
+                Trackbars[i] = data.Slice(index, 128).ToSjisString();
                 index += 128;
             }
             ObjectTypes = new ObjectType[ObjectTypeNum];
             for (uint i = 0; i < ObjectTypeNum; i++)
             {
-                ObjectTypes[i] = new ObjectType(data.Skip(index).Take(ObjectType.Size).ToArray());
+                ObjectTypes[i] = new ObjectType(data.Slice(index, ObjectType.Size));
                 index += ObjectType.Size;
             }
             Objects = new TimelineObject[ObjectNum];
             for (uint i = 0; i < ObjectNum; i++)
             {
-                var size = data.Skip(index + (int)TimelineObject.ExtSizeOffset).Take(4).ToArray().ParseUInt32();
+                var size = data.Slice(index + (int)TimelineObject.ExtSizeOffset, 4).ParseUInt32();
                 size += TimelineObject.BaseSize;
-                Objects[i] = new TimelineObject(data.Skip(index).Take((int)size).ToArray(), ObjectTypes);
+                Objects[i] = new TimelineObject(data.Slice(index, (int)size), ObjectTypes);
                 index += (int)size;
             }
         }

@@ -58,7 +58,7 @@ namespace AviUtlScriptExtractor
             {
                 var size = data.Skip(index + (int)TimelineObject.ExtSizeOffset).Take(4).ToArray().ParseUInt32();
                 size += TimelineObject.BaseSize;
-                Objects[i] = new TimelineObject(data.Skip(index).Take((int)size).ToArray());
+                Objects[i] = new TimelineObject(data.Skip(index).Take((int)size).ToArray(), ObjectTypes);
                 index += (int)size;
             }
         }

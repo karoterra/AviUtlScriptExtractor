@@ -39,26 +39,65 @@ namespace AviUtlScriptExtractor
             if (project.Filters.ContainsKey("拡張編集"))
             {
                 var exedit = new ExEdit(project.Filters["拡張編集"]);
+                var animEffectType = exedit.ObjectTypes.ToList().FindIndex(x => x.Name == "アニメーション効果");
+                var customObjectType = exedit.ObjectTypes.ToList().FindIndex(x => x.Name == "カスタムオブジェクト");
+                var camEffectType = exedit.ObjectTypes.ToList().FindIndex(x => x.Name == "カメラ効果");
+                var sceneChangeType = exedit.ObjectTypes.ToList().FindIndex(x => x.Name == "シーンチェンジ");
 
                 Debug.WriteLine("オブジェクト");
                 foreach (var obj in exedit.Objects)
                 {
-                    Debug.WriteLine(" - " + (obj.Preview.Length > 0 ? obj.Preview : exedit.ObjectTypes[obj.ObjectType].Name));
-                    if (exedit.ObjectTypes[obj.ObjectType].Name == "カスタムオブジェクト")
+                    Debug.WriteLine("- " + (obj.Preview.Length > 0
+                        ? obj.Preview.Replace("\r\n", " ")
+                        : exedit.ObjectTypes[obj.ObjectTypes[0]].Name));
+                    // アニメーション効果、カメラ効果、シーンチェンジ
+                    for (int i = 0; i < obj.ObjectTypes.Length; i++)
                     {
-                        var name = obj.ExtData.Skip(4).ToArray().ToSjisString();
+                        if (obj.ObjectTypes[i] == animEffectType && obj.ExtData[i].Length > 0)
+                        {
+                            var name = obj.ExtData[i].Skip(4).Take(256).ToArray().ToSjisString();
+                            if (name.Length > 0)
+                            {
+                                Debug.WriteLine($"  アニメーション効果: {name}");
+                                anmScripts.Add(name);
+                            }
+                        }
+                        if (obj.ObjectTypes[i] == camEffectType && obj.ExtData[i].Length > 0)
+                        {
+                            var name = obj.ExtData[i].Skip(4).Take(256).ToArray().ToSjisString();
+                            if (name.Length > 0)
+                            {
+                                Debug.WriteLine($"  カメラ効果: {name}");
+                                camScripts.Add(name);
+                            }
+                        }
+                        if (obj.ObjectTypes[i] == sceneChangeType && obj.ExtData[i].Length > 0)
+                        {
+                            var name = obj.ExtData[i].Skip(4).Take(256).ToArray().ToSjisString();
+                            if (name.Length > 0)
+                            {
+                                Debug.WriteLine($"  シーンチェンジ: {name}");
+                                scnScripts.Add(name);
+                            }
+                        }
+                    }
+                    // カスタムオブジェクト
+                    if (obj.ObjectTypes[0]== customObjectType && obj.ExtData[0].Length > 0)
+                    {
+                        var name = obj.ExtData[0].Skip(4).Take(256).ToArray().ToSjisString();
                         if (name.Length > 0)
                         {
-                            Debug.WriteLine($"    カスタムオブジェクト: {name}");
+                            Debug.WriteLine($"  カスタムオブジェクト: {name}");
                             objScripts.Add(name);
                         }
                     }
+                    // トラックバー
                     foreach (var trackbar in obj.Trackbars)
                     {
                         if (trackbar.Type == 0xF)
                         {
                             var name = exedit.Trackbars[trackbar.ScriptIndex];
-                            Debug.WriteLine($"    トラックバー: {name}");
+                            Debug.WriteLine($"  トラックバー: {name}");
                             traScripts.Add(name);
                         }
                     }

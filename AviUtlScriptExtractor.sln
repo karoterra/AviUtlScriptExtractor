@@ -14,6 +14,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AupDotNet", "AupDotNet\src\AupDotNet\AupDotNet.csproj", "{A2010DC2-7FCE-4A5B-8EF8-280FD5A2575D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,6 +26,10 @@ Global
 		{C98C0C63-080F-476B-B8A1-0E87A3B6BAEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C98C0C63-080F-476B-B8A1-0E87A3B6BAEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C98C0C63-080F-476B-B8A1-0E87A3B6BAEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2010DC2-7FCE-4A5B-8EF8-280FD5A2575D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2010DC2-7FCE-4A5B-8EF8-280FD5A2575D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2010DC2-7FCE-4A5B-8EF8-280FD5A2575D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2010DC2-7FCE-4A5B-8EF8-280FD5A2575D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

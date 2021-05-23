@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Diagnostics;
+using Karoterra.AupDotNet;
+using Karoterra.AupDotNet.ExEdit;
+using Karoterra.AupDotNet.ExEdit.Effects;
 
 namespace AviUtlScriptExtractor
 {
@@ -59,82 +61,61 @@ namespace AviUtlScriptExtractor
                 return 1;
             }
 
-            if (project.Filters.ContainsKey("拡張編集"))
+            ExEditProject exedit = null;
+            for (int i = 0; i < project.FilterProjects.Count; i++)
             {
-                ExEdit exedit;
-                try
+                RawFilterProject filter = project.FilterProjects[i] as RawFilterProject;
+                if (filter != null && filter.Name == "拡張編集")
                 {
-                    exedit = new ExEdit(project.Filters["拡張編集"]);
+                    exedit = new ExEditProject(filter);
+                    break;
                 }
-                catch (IndexOutOfRangeException)
-                {
-                    Console.Error.WriteLine("拡張編集データの読み込み中にエラーが発生しました。" +
-                        "拡張編集またはAviUtlが対応していないバージョンである可能性があります。");
-                    Console.Error.WriteLine("詳細: 配列のアクセス違反");
-                    Console.WriteLine("終了するにはEnterを押してください...");
-                    Console.ReadLine();
-                    return 1;
-                }
-                var animEffectType = exedit.ObjectTypes.ToList().FindIndex(x => x.Name == "アニメーション効果");
-                var customObjectType = exedit.ObjectTypes.ToList().FindIndex(x => x.Name == "カスタムオブジェクト");
-                var camEffectType = exedit.ObjectTypes.ToList().FindIndex(x => x.Name == "カメラ効果");
-                var sceneChangeType = exedit.ObjectTypes.ToList().FindIndex(x => x.Name == "シーンチェンジ");
+            }
 
-                Debug.WriteLine("オブジェクト");
-                foreach (var obj in exedit.Objects)
+            if (exedit == null)
+            {
+                Console.Error.WriteLine("拡張編集のデータが見つかりません");
+                Console.WriteLine("終了するにはEnterを押してください...");
+                Console.ReadLine();
+                return 1;
+            }
+
+            foreach (var obj in exedit.Objects)
+            {
+                foreach (var effect in obj.Effects)
                 {
-                    Debug.WriteLine("- " + (obj.Preview.Length > 0
-                        ? obj.Preview.Replace("\r\n", " ")
-                        : exedit.ObjectTypes[obj.ObjectTypes[0]].Name));
-                    // アニメーション効果、カメラ効果、シーンチェンジ
-                    for (int i = 0; i < obj.ObjectTypes.Length; i++)
+                    switch (effect)
                     {
-                        if (obj.ObjectTypes[i] == animEffectType && obj.ExtData[i].Length > 0)
-                        {
-                            var name = obj.ExtData[i].Skip(4).Take(256).ToArray().ToSjisString();
-                            if (name.Length > 0)
+                        case AnimationEffect anm:
+                            if (anm.Name.Length > 0)
                             {
-                                Debug.WriteLine($"  アニメーション効果: {name}");
-                                anmScripts.Add(name);
+                                anmScripts.Add(anm.Name);
                             }
-                        }
-                        if (obj.ObjectTypes[i] == camEffectType && obj.ExtData[i].Length > 0)
-                        {
-                            var name = obj.ExtData[i].Skip(4).Take(256).ToArray().ToSjisString();
-                            if (name.Length > 0)
+                            break;
+                        case CustomObjectEffect coe:
+                            if (coe.Name.Length > 0)
                             {
-                                Debug.WriteLine($"  カメラ効果: {name}");
-                                camScripts.Add(name);
+                                objScripts.Add(coe.Name);
                             }
-                        }
-                        if (obj.ObjectTypes[i] == sceneChangeType && obj.ExtData[i].Length > 0)
-                        {
-                            var name = obj.ExtData[i].Skip(4).Take(256).ToArray().ToSjisString();
-                            if (name.Length > 0)
+                            break;
+                        case CameraEffect cam:
+                            if (cam.Name.Length > 0)
                             {
-                                Debug.WriteLine($"  シーンチェンジ: {name}");
-                                scnScripts.Add(name);
+                                camScripts.Add(cam.Name);
                             }
-                        }
+                            break;
+                        case SceneChangeEffect scn:
+                            if (scn.Name.Length > 0)
+                            {
+                                scnScripts.Add(scn.Name);
+                            }
+                            break;
                     }
-                    // カスタムオブジェクト
-                    if (obj.ObjectTypes[0] == customObjectType && obj.ExtData[0].Length > 0)
+                    foreach (var trackbar in effect.Trackbars)
                     {
-                        var name = obj.ExtData[0].Skip(4).Take(256).ToArray().ToSjisString();
-                        if (name.Length > 0)
+                        if (trackbar.Flag.HasFlag(TrackbarFlag.Script))
                         {
-                            Debug.WriteLine($"  カスタムオブジェクト: {name}");
-                            objScripts.Add(name);
-                        }
-                    }
-                    // トラックバー
-                    foreach (var trackbar in obj.Trackbars)
-                    {
-                        if (trackbar.Type == 0xF)
-                        {
-                            var name = exedit.Trackbars[trackbar.ScriptIndex];
-                            Debug.WriteLine($"  トラックバー: {name}");
-                            traScripts.Add(name);
+                            traScripts.Add(exedit.TrackbarScripts[trackbar.ScriptIndex].Name);
                         }
                     }
                 }

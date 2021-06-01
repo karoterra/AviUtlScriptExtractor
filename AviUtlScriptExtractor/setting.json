@@ -1,0 +1,91 @@
+{
+  "authors": [
+    {
+      "name": "karoterra",
+      "scripts": [
+        {
+          "name": "@動く多角形.anm",
+          "nicoid": "sm38752367",
+          "url": "https://github.com/karoterra/aviutl-scripts"
+        },
+        {
+          "name": "動く多角形ベース.obj",
+          "nicoid": "sm38752367",
+          "url": "https://github.com/karoterra/aviutl-scripts"
+        },
+        {
+          "name": "リバーシ.obj",
+          "nicoid": "",
+          "url": "https://github.com/karoterra/aviutl-scripts",
+          "dependencies": [
+            "aviutl_browser"
+          ]
+        },
+        {
+          "name": "MarkdownEX.anm",
+          "nicoid": "sm38814110",
+          "url": "https://github.com/karoterra/aviutl-markdownex",
+          "dependencies": [
+            "aviutl_browser",
+            "rikky_module"
+          ]
+        },
+        {
+          "name": "@GamingButton.anm",
+          "nicoid": "sm38463837",
+          "url": "https://github.com/karoterra/AviUtl-GamingButton"
+        }
+      ]
+    },
+    {
+      "name": "oov",
+      "scripts": [
+        {
+          "name": "aviutl_browser",
+          "nicoid": "sm38772089",
+          "url": "https://github.com/oov/aviutl_browser"
+        }
+      ]
+    },
+    {
+      "name": "rikky",
+      "scripts": [
+        {
+          "name": "rikky_module",
+          "nicoid": "sm34776162",
+          "url": "http://hazumurhythm.com/a/a2Z/"
+        }
+      ]
+    },
+    {
+      "name": "author1",
+      "scripts": [
+        {
+          "name": "AviUtlスクリプト.tra",
+          "nicoid": "",
+          "url": "http://example.com"
+        },
+        {
+          "name": "AviUtlスクリプト.anm",
+          "nicoid": "",
+          "url": "http://example.com"
+        },
+        {
+          "name": "AviUtlスクリプト.obj",
+          "nicoid": "",
+          "url": "http://example.com"
+        },
+        {
+          "name": "AviUtlスクリプト.cam",
+          "nicoid": "",
+          "url": "http://example.com"
+        },
+        {
+          "name": "AviUtlスクリプト.scn",
+          "nicoid": "",
+          "url": "http://example.com"
+        }
+      ]
+    }
+  ]
+}

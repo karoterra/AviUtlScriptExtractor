@@ -6,7 +6,8 @@
         {
           "name": "@動く多角形.anm",
           "nicoid": "sm38752367",
-          "url": "https://github.com/karoterra/aviutl-scripts"
+          "url": "https://github.com/karoterra/aviutl-scripts",
+          "comment": "コメントも付けられます"
         },
         {
           "name": "動く多角形ベース.obj",

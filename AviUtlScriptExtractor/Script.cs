@@ -18,6 +18,9 @@ namespace AviUtlScriptExtractor
         [JsonPropertyName("dependencies")]
         public List<string> Dependencies { get; set; }
 
+        [JsonPropertyName("comment")]
+        public string Comment { get; set; }
+
         [JsonIgnore]
         public Author Author { get; set; }
 

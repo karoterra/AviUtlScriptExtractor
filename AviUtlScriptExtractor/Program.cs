@@ -134,16 +134,16 @@ namespace AviUtlScriptExtractor
             var outputPath = Path.Combine(outputDir, outputFilename);
             using (var sw = new StreamWriter(outputPath, false, sjis))
             {
-                sw.WriteLine("script,filename,type,author,nicoid,url");
+                sw.WriteLine("script,filename,type,author,nicoid,url,comment");
                 foreach (var x in usedScripts)
                 {
                     if (x.Value != null)
                     {
-                        sw.WriteLine($"{x.Key},{x.Value.Name},{x.Value.Type.ToString().ToLower()},{x.Value.Author.Name},{x.Value.NicoId},{x.Value.Url}");
+                        sw.WriteLine($"{x.Key},{x.Value.Name},{x.Value.Type.ToString().ToLower()},{x.Value.Author.Name},{x.Value.NicoId},{x.Value.Url},{x.Value.Comment}");
                     }
                     else
                     {
-                        sw.WriteLine($"{x.Key},,,,,");
+                        sw.WriteLine($"{x.Key},,,,,,");
                     }
                 }
             }

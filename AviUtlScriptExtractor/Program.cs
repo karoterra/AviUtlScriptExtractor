@@ -21,6 +21,7 @@ namespace AviUtlScriptExtractor
                 Console.ReadLine();
                 return 1;
             }
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             var sjis = Encoding.GetEncoding(932);
             string inputPath = args[0];
             if (!File.Exists(inputPath))
@@ -120,7 +121,7 @@ namespace AviUtlScriptExtractor
                     }
                     foreach (var trackbar in effect.Trackbars)
                     {
-                        if (trackbar.Flag.HasFlag(TrackbarFlag.Script))
+                        if (trackbar.Type == TrackbarType.Script)
                         {
                             scriptName = exedit.TrackbarScripts[trackbar.ScriptIndex].Name;
                             AddUsedScript(knownScripts, usedScripts, scriptName, ScriptType.Tra);

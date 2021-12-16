@@ -142,7 +142,7 @@ namespace AviUtlScriptExtractor
             var outputPath = Path.Combine(outputDir, outputFilename);
             using (var sw = new StreamWriter(outputPath, false, sjis))
             {
-                sw.WriteLine("script,filename,type,author,nicoid,url,comment");
+                sw.WriteLine("script,filename,type,author,nicoid,url,comment,count");
                 foreach (var x in usedScripts.Values)
                 {
                     if (x == null) continue;
@@ -155,6 +155,7 @@ namespace AviUtlScriptExtractor
                         x.NicoId ?? string.Empty,
                         x.Url ?? string.Empty,
                         x.Comment ?? string.Empty,
+                        x.Count.ToString(),
                     };
                     sw.WriteLine(string.Join(',', elements));
                 }
@@ -180,6 +181,9 @@ namespace AviUtlScriptExtractor
             var key = new UsedScriptKey { Name = name, Type = type };
             if (used.ContainsKey(key))
             {
+                used[key].Increment();
+                foreach (var d in used[key].Dependencies)
+                    d.Increment();
                 return;
             }
             else if (known.ContainsKey(filename))
@@ -189,9 +193,15 @@ namespace AviUtlScriptExtractor
                 foreach (var d in known[filename].Dependencies)
                 {
                     var dkey = new UsedScriptKey { Name = d.Name, Type = type };
-                    if (!used.ContainsKey(dkey))
+                    if (used.ContainsKey(dkey))
+                    {
+                        used[key].Dependencies.Add(used[dkey]);
+                        used[dkey].Increment();
+                    }
+                    else
                     {
                         used[dkey] = d.Clone();
+                        used[key].Dependencies.Add(used[dkey]);
                     }
                 }
             }

@@ -11,6 +11,11 @@
         public string? Comment { get; set; }
         public List<ScriptData> Dependencies { get; } = new List<ScriptData>();
 
+        private int _count = 1;
+        public int Count => _count;
+
+        public void Increment() => _count++;
+
         public ScriptData Clone()
         {
             return new ScriptData

@@ -1,14 +1,13 @@
-﻿using System.Collections.Generic;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace AviUtlScriptExtractor
 {
-    class Author
+    public class AuthorSetting
     {
         [JsonPropertyName("name")]
         public string? Name { get; set; }
 
         [JsonPropertyName("scripts")]
-        public List<Script> Scripts { get; } = new List<Script>();
+        public List<ScriptSetting?> Scripts { get; set; } = new List<ScriptSetting?>();
     }
 }

@@ -41,10 +41,13 @@ namespace AviUtlScriptExtractor
                 return 1;
             }
             var json = File.ReadAllText(settingPath);
-            Setting setting = JsonSerializer.Deserialize<Setting>(json) ?? new Setting();
-            setting.CompleteRead();
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            };
+            Setting setting = JsonSerializer.Deserialize<Setting>(json, options) ?? new Setting();
             var knownScripts = setting.GetScripts();
-            var usedScripts = new Dictionary<string, Script?>();
+            var usedScripts = new Dictionary<UsedScriptKey, ScriptData>();
 
             AviUtlProject project;
             try
@@ -88,6 +91,8 @@ namespace AviUtlScriptExtractor
 
             foreach (var obj in exedit.Objects)
             {
+                if (obj.Chain) continue;
+
                 foreach (var effect in obj.Effects)
                 {
                     ScriptType type = ScriptType.Other;
@@ -96,22 +101,28 @@ namespace AviUtlScriptExtractor
                     {
                         case AnimationEffect anm:
                             type = ScriptType.Anm;
-                            scriptName = anm.Name;
+                            scriptName = string.IsNullOrEmpty(anm.Name)
+                                ? AnimationEffect.Defaults[anm.ScriptId]
+                                : anm.Name;
                             break;
                         case CustomObjectEffect coe:
                             type = ScriptType.Obj;
-                            scriptName = coe.Name;
+                            scriptName = string.IsNullOrEmpty(coe.Name)
+                                ? CustomObjectEffect.Defaults[coe.ScriptId]
+                                : coe.Name;
                             break;
                         case CameraEffect cam:
                             type = ScriptType.Cam;
-                            scriptName = cam.Name;
+                            scriptName = string.IsNullOrEmpty(cam.Name)
+                                ? CameraEffect.Defaults[cam.ScriptId]
+                                : cam.Name;
                             break;
-                        case SceneChangeEffect scn:
+                        case SceneChangeEffect scn when scn.Params != null:
                             type = ScriptType.Scn;
                             scriptName = scn.Name;
                             break;
                     }
-                    if (scriptName.Length > 0)
+                    if (!string.IsNullOrEmpty(scriptName))
                     {
                         AddUsedScript(knownScripts, usedScripts, scriptName, type);
                     }
@@ -132,57 +143,65 @@ namespace AviUtlScriptExtractor
             using (var sw = new StreamWriter(outputPath, false, sjis))
             {
                 sw.WriteLine("script,filename,type,author,nicoid,url,comment");
-                foreach (var x in usedScripts)
+                foreach (var x in usedScripts.Values)
                 {
-                    if (x.Value != null)
+                    if (x == null) continue;
+                    var elements = new string[]
                     {
-                        sw.WriteLine($"{x.Key},{x.Value.Name},{x.Value.Type.ToString().ToLower()},{x.Value.Author.Name},{x.Value.NicoId},{x.Value.Url},{x.Value.Comment}");
-                    }
-                    else
-                    {
-                        sw.WriteLine($"{x.Key},,,,,,");
-                    }
+                        x.Name,
+                        x.Filename,
+                        x.Type.ToString().ToLower(),
+                        x.Author ?? string.Empty,
+                        x.NicoId ?? string.Empty,
+                        x.Url ?? string.Empty,
+                        x.Comment ?? string.Empty,
+                    };
+                    sw.WriteLine(string.Join(',', elements));
                 }
             }
 
             return 0;
         }
 
-        static string GetScriptFilename(string name, ScriptType type)
+        /// <summary>
+        /// usedに使ったスクリプトを登録する
+        /// </summary>
+        /// <param name="known">settingにある既知のスクリプト。キー:ファイル名</param>
+        /// <param name="used">使ったスクリプト。キー:UsedScriptKey</param>
+        /// <param name="name">スクリプト名</param>
+        /// <param name="type">スクリプトの種類</param>
+        static void AddUsedScript(
+            Dictionary<string, ScriptData> known,
+            Dictionary<UsedScriptKey, ScriptData> used,
+            string name,
+            ScriptType type)
         {
-            string ext = type.ToString().ToLower();
-            int index = name.IndexOf('@');
-            if (index >= 0)
+            var filename = Utils.GetScriptFilename(name, type);
+            var key = new UsedScriptKey { Name = name, Type = type };
+            if (used.ContainsKey(key))
             {
-                name = name[index..];
+                return;
             }
-            return $"{name}.{ext}";
-        }
-
-        static void AddUsedScript(Dictionary<string, Script> known, Dictionary<string, Script?> used, string name, ScriptType type)
-        {
-            var filename = GetScriptFilename(name, type);
-            if (known.ContainsKey(filename))
+            else if (known.ContainsKey(filename))
             {
-                used[name] = known[filename];
-                if (known[filename].Dependencies != null)
+                used[key] = known[filename].Clone();
+                used[key].Name = name;
+                foreach (var d in known[filename].Dependencies)
                 {
-                    foreach (var d in known[filename].Dependencies)
+                    var dkey = new UsedScriptKey { Name = d.Name, Type = type };
+                    if (!used.ContainsKey(dkey))
                     {
-                        if (known.ContainsKey(d))
-                        {
-                            used[d] = known[d];
-                        }
-                        else
-                        {
-                            used[d] = null;
-                        }
+                        used[dkey] = d.Clone();
                     }
                 }
             }
             else
             {
-                used[name] = null;
+                used[key] = new ScriptData
+                {
+                    Name = name,
+                    Filename = filename,
+                };
             }
         }
     }

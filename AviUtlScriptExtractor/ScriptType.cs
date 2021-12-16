@@ -1,6 +1,6 @@
 ﻿namespace AviUtlScriptExtractor
 {
-    enum ScriptType
+    public enum ScriptType
     {
         Anm,
         Obj,

@@ -1,27 +1,32 @@
-﻿using System.Collections.Generic;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace AviUtlScriptExtractor
 {
-    class Setting
+    public class Setting
     {
         [JsonPropertyName("authors")]
-        public List<Author> Authors { get; } = new List<Author>();
+        public List<AuthorSetting> Authors { get; set; } = new List<AuthorSetting>();
 
-        public void CompleteRead()
+        internal Dictionary<string, ScriptData> GetScripts()
         {
-            foreach (var author in Authors)
+            var scripts = new Dictionary<string, ScriptData>();
+            var exedit = new ScriptData
             {
-                foreach (var script in author.Scripts)
-                {
-                    script.Author = author;
-                }
-            }
-        }
-
-        public Dictionary<string, Script> GetScripts()
-        {
-            var scripts = new Dictionary<string, Script>();
+                Filename = "exedit.anm",
+                Author = "ＫＥＮくん",
+                NicoId = "im1696493",
+                Url = "http://spring-fragrance.mints.ne.jp/aviutl/",
+                Comment = "標準スクリプト",
+            };
+            scripts["exedit.anm"] = exedit.Clone();
+            exedit.Filename = "exedit.obj";
+            scripts["exedit.obj"] = exedit.Clone();
+            exedit.Filename = "exedit.scn";
+            scripts["exedit.scn"] = exedit.Clone();
+            exedit.Filename = "exedit.cam";
+            scripts["exedit.cam"] = exedit.Clone();
+            exedit.Filename = "exedit.tra";
+            scripts["exedit.tra"] = exedit;
 
             foreach (var author in Authors)
             {
@@ -29,10 +34,48 @@ namespace AviUtlScriptExtractor
 
                 foreach (var script in author.Scripts)
                 {
-                    if (script == null) continue;
-                    if (script.Name == null) continue;
+                    if (script == null || string.IsNullOrEmpty(script.Name))
+                        continue;
 
-                    scripts.Add(script.Name, script);
+                    var data = new ScriptData
+                    {
+                        Name = script.Name,
+                        Filename = script.Name,
+                        Author = author.Name,
+                        NicoId = script.NicoId,
+                        Url = script.Url,
+                        Comment = script.Comment,
+                    };
+                    scripts[script.Name] = data;
+                }
+            }
+
+            foreach (var author in Authors)
+            {
+                if (author == null) continue;
+                foreach (var script in author.Scripts)
+                {
+                    if (script == null || string.IsNullOrEmpty(script.Name))
+                        continue;
+                    foreach (var d in script.Dependencies)
+                    {
+                        if (string.IsNullOrEmpty(d)) continue;
+
+                        if (scripts.ContainsKey(d))
+                        {
+                            scripts[script.Name].Dependencies.Add(scripts[d]);
+                        }
+                        else
+                        {
+                            var data = new ScriptData
+                            {
+                                Name = d,
+                                Filename = d,
+                            };
+                            scripts[d] = data;
+                            scripts[script.Name].Dependencies.Add(data);
+                        }
+                    }
                 }
             }
 

@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using Karoterra.AupDotNet;
 using Karoterra.AupDotNet.ExEdit;
 using Karoterra.AupDotNet.ExEdit.Effects;
+using CommandLine;
 
 namespace AviUtlScriptExtractor
 {
@@ -14,21 +11,18 @@ namespace AviUtlScriptExtractor
     {
         static int Main(string[] args)
         {
-            if (args.Length != 1)
-            {
-                Console.Error.WriteLine("ファイル名を指定してください");
-                Console.WriteLine("終了するにはEnterを押してください...");
-                Console.ReadLine();
-                return 1;
-            }
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            var sjis = Encoding.GetEncoding(932);
-            string inputPath = args[0];
-            if (!File.Exists(inputPath))
+
+            var res = Parser.Default.ParseArguments<Options>(args)
+                .MapResult(opt => Run(opt), err => 1);
+            return res;
+        }
+
+        static int Run(Options opt)
+        {
+            if (opt.OutputPath == opt.Filename)
             {
-                Console.Error.WriteLine($"\"{inputPath}\" が見つかりません");
-                Console.WriteLine("終了するにはEnterを押してください...");
-                Console.ReadLine();
+                Console.Error.WriteLine("入力ファイルと出力ファイルのパスが同じです。");
                 return 1;
             }
 
@@ -36,8 +30,6 @@ namespace AviUtlScriptExtractor
             if (!File.Exists(settingPath))
             {
                 Console.Error.WriteLine("setting.json が見つかりません");
-                Console.WriteLine("終了するにはEnterを押してください...");
-                Console.ReadLine();
                 return 1;
             }
             var json = File.ReadAllText(settingPath);
@@ -46,30 +38,9 @@ namespace AviUtlScriptExtractor
                 PropertyNameCaseInsensitive = true,
             };
             Setting setting = JsonSerializer.Deserialize<Setting>(json, options) ?? new Setting();
-            var knownScripts = setting.GetScripts();
-            var usedScripts = new Dictionary<UsedScriptKey, ScriptData>();
 
-            AviUtlProject project;
-            try
-            {
-                project = new(inputPath);
-            }
-            catch (FileFormatException ex)
-            {
-                Console.Error.WriteLine($"\"{inputPath}\" はAviUtlプロジェクトファイルではないか破損している可能性があります。");
-                Console.Error.WriteLine($"詳細: {ex.Message}");
-                Console.WriteLine("終了するにはEnterを押してください...");
-                Console.ReadLine();
-                return 1;
-            }
-            catch (EndOfStreamException)
-            {
-                Console.Error.WriteLine($"\"{inputPath}\" はAviUtlプロジェクトファイルではないか破損している可能性があります。");
-                Console.Error.WriteLine($"詳細: ファイルの読み込み中に終端に達しました");
-                Console.WriteLine("終了するにはEnterを押してください...");
-                Console.ReadLine();
-                return 1;
-            }
+            AviUtlProject? project = Utils.ReadAup(opt.Filename);
+            if (project == null) return 1;
 
             ExEditProject? exedit = null;
             for (int i = 0; i < project.FilterProjects.Count; i++)
@@ -84,10 +55,51 @@ namespace AviUtlScriptExtractor
             if (exedit == null)
             {
                 Console.Error.WriteLine("拡張編集のデータが見つかりません");
-                Console.WriteLine("終了するにはEnterを押してください...");
-                Console.ReadLine();
                 return 1;
             }
+
+            var usedScripts = ExtractScript(exedit, setting);
+
+            if (string.IsNullOrEmpty(opt.OutputPath))
+            {
+                opt.OutputPath = Path.Combine(
+                    Path.GetDirectoryName(opt.Filename) ?? string.Empty,
+                    $"{Path.GetFileNameWithoutExtension(opt.Filename)}_scripts.csv");
+            }
+            using (var sw = new StreamWriter(opt.OutputPath))
+            {
+                sw.WriteLine("script,filename,type,author,nicoid,url,comment,count");
+                foreach (var x in usedScripts)
+                {
+                    if (x == null) continue;
+                    var elements = new string[]
+                    {
+                        x.Name,
+                        x.Filename,
+                        x.Type.ToString().ToLower(),
+                        x.Author ?? string.Empty,
+                        x.NicoId ?? string.Empty,
+                        x.Url ?? string.Empty,
+                        x.Comment ?? string.Empty,
+                        x.Count.ToString(),
+                    };
+                    sw.WriteLine(string.Join(',', elements));
+                }
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// 拡張編集で使ったスクリプトを抽出する
+        /// </summary>
+        /// <param name="exedit">拡張編集のデータ</param>
+        /// <param name="setting">アプリの設定</param>
+        /// <returns></returns>
+        static List<ScriptData> ExtractScript(ExEditProject exedit, Setting setting)
+        {
+            var knownScripts = setting.GetScripts();
+            var usedScripts = new Dictionary<UsedScriptKey, ScriptData>();
 
             foreach (var obj in exedit.Objects)
             {
@@ -137,31 +149,7 @@ namespace AviUtlScriptExtractor
                 }
             }
 
-            var outputDir = Path.GetDirectoryName(inputPath) ?? "";
-            var outputFilename = $"{Path.GetFileNameWithoutExtension(inputPath)}_scripts.csv";
-            var outputPath = Path.Combine(outputDir, outputFilename);
-            using (var sw = new StreamWriter(outputPath, false, sjis))
-            {
-                sw.WriteLine("script,filename,type,author,nicoid,url,comment,count");
-                foreach (var x in usedScripts.Values)
-                {
-                    if (x == null) continue;
-                    var elements = new string[]
-                    {
-                        x.Name,
-                        x.Filename,
-                        x.Type.ToString().ToLower(),
-                        x.Author ?? string.Empty,
-                        x.NicoId ?? string.Empty,
-                        x.Url ?? string.Empty,
-                        x.Comment ?? string.Empty,
-                        x.Count.ToString(),
-                    };
-                    sw.WriteLine(string.Join(',', elements));
-                }
-            }
-
-            return 0;
+            return usedScripts.Values.ToList();
         }
 
         /// <summary>

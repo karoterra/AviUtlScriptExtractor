@@ -7,6 +7,46 @@ namespace AviUtlScriptExtractor
         [JsonPropertyName("authors")]
         public List<AuthorSetting> Authors { get; set; } = new List<AuthorSetting>();
 
+        [JsonPropertyName("columns")]
+        public List<string> Columns { get; set; } = Program.columns.ToList();
+
+        public bool Validate()
+        {
+            if (Columns.Count == 0)
+            {
+                Columns = Program.columns.ToList();
+            }
+            else
+            {
+                foreach (var column in Columns)
+                {
+                    if (!Program.columns.Contains(column))
+                    {
+                        Console.Error.WriteLine("[setting.json]不明な列名が指定されました。");
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        internal void MergeOptions(Options opt)
+        {
+            if (opt.Columns != null)
+            {
+                var cols = opt.Columns.ToList();
+                if (cols.Count > 0)
+                {
+                    Columns = cols;
+                }
+            }
+        }
+
+        /// <summary>
+        /// スクリプトの抽出時に使う既知のスクリプトの辞書の作成
+        /// </summary>
+        /// <returns>キー:ファイル名,値:ScriptData</returns>
         internal Dictionary<string, ScriptData> GetScripts()
         {
             var scripts = new Dictionary<string, ScriptData>();

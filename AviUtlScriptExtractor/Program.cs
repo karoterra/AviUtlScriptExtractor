@@ -9,6 +9,8 @@ namespace AviUtlScriptExtractor
 {
     class Program
     {
+        public static readonly string[] columns = { "script", "filename", "type", "author", "nicoid", "url", "comment", "count" };
+
         static int Main(string[] args)
         {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -20,24 +22,17 @@ namespace AviUtlScriptExtractor
 
         static int Run(Options opt)
         {
-            if (opt.OutputPath == opt.Filename)
+            if (!opt.Validate())
             {
-                Console.Error.WriteLine("入力ファイルと出力ファイルのパスが同じです。");
                 return 1;
             }
 
-            var settingPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "setting.json");
-            if (!File.Exists(settingPath))
+            Setting setting = LoadSetting();
+            if (!setting.Validate())
             {
-                Console.Error.WriteLine("setting.json が見つかりません");
                 return 1;
             }
-            var json = File.ReadAllText(settingPath);
-            var options = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-            };
-            Setting setting = JsonSerializer.Deserialize<Setting>(json, options) ?? new Setting();
+            setting.MergeOptions(opt);
 
             AviUtlProject? project = Utils.ReadAup(opt.Filename);
             if (project == null) return 1;
@@ -66,28 +61,24 @@ namespace AviUtlScriptExtractor
                     Path.GetDirectoryName(opt.Filename) ?? string.Empty,
                     $"{Path.GetFileNameWithoutExtension(opt.Filename)}_scripts.csv");
             }
-            using (var sw = new StreamWriter(opt.OutputPath))
-            {
-                sw.WriteLine("script,filename,type,author,nicoid,url,comment,count");
-                foreach (var x in usedScripts)
-                {
-                    if (x == null) continue;
-                    var elements = new string[]
-                    {
-                        x.Name,
-                        x.Filename,
-                        x.Type.ToString().ToLower(),
-                        x.Author ?? string.Empty,
-                        x.NicoId ?? string.Empty,
-                        x.Url ?? string.Empty,
-                        x.Comment ?? string.Empty,
-                        x.Count.ToString(),
-                    };
-                    sw.WriteLine(string.Join(',', elements));
-                }
-            }
+            OutputCsv(opt.OutputPath, usedScripts, setting);
 
             return 0;
+        }
+
+        static Setting LoadSetting()
+        {
+            var settingPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "setting.json");
+            if (!File.Exists(settingPath))
+            {
+                return new Setting();
+            }
+            var json = File.ReadAllText(settingPath);
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            };
+            return JsonSerializer.Deserialize<Setting>(json, options) ?? new Setting();
         }
 
         /// <summary>
@@ -201,6 +192,62 @@ namespace AviUtlScriptExtractor
                     Filename = filename,
                 };
             }
+        }
+
+        static bool OutputCsv(string path, List<ScriptData> scripts, Setting setting)
+        {
+            try
+            {
+                using var sw = new StreamWriter(path);
+                sw.WriteLine(string.Join(',', setting.Columns));
+                foreach (var script in scripts)
+                {
+                    if (script == null) continue;
+                    var elements = new List<string>(setting.Columns.Count);
+                    foreach (var column in setting.Columns)
+                    {
+                        string elem = column switch
+                        {
+                            "script" => script.Name,
+                            "filename" => script.Filename,
+                            "type" => script.Type.ToString().ToLower(),
+                            "author" => script.Author ?? string.Empty,
+                            "nicoid" => script.NicoId ?? string.Empty,
+                            "url" => script.Url ?? string.Empty,
+                            "comment" => script.Comment ?? string.Empty,
+                            "count" => script.Count.ToString(),
+                            _ => string.Empty,
+                        };
+                        elements.Add(elem);
+                    }
+                    sw.WriteLine(string.Join(',', elements));
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Console.Error.WriteLine($"{path} へのアクセス許可がありません。");
+                return false;
+            }
+            catch (PathTooLongException)
+            {
+                Console.Error.WriteLine("出力パスが長すぎます。");
+                return false;
+            }
+            catch (Exception e) when(
+                e is ArgumentException or
+                ArgumentNullException or
+                DirectoryNotFoundException or
+                NotSupportedException)
+            {
+                Console.Error.WriteLine("有効な出力パスを指定してください。");
+                return false;
+            }
+            catch (IOException)
+            {
+                Console.Error.WriteLine("ファイル作成中にIOエラーが発生しました。");
+                return false;
+            }
+            return true;
         }
     }
 }

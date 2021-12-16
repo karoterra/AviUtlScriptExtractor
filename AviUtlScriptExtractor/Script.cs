@@ -7,43 +7,32 @@ namespace AviUtlScriptExtractor
     class Script
     {
         [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         [JsonPropertyName("nicoid")]
-        public string NicoId { get; set; }
+        public string? NicoId { get; set; }
 
         [JsonPropertyName("url")]
-        public string Url { get; set; }
+        public string? Url { get; set; }
 
         [JsonPropertyName("dependencies")]
-        public List<string> Dependencies { get; set; }
+        public List<string> Dependencies { get; } = new List<string>();
 
         [JsonPropertyName("comment")]
-        public string Comment { get; set; }
+        public string? Comment { get; set; }
 
         [JsonIgnore]
         public Author Author { get; set; }
 
         [JsonIgnore]
-        public ScriptType Type
+        public ScriptType Type => Path.GetExtension(Name) switch
         {
-            get
-            {
-                switch (Path.GetExtension(Name))
-                {
-                    case ".anm":
-                        return ScriptType.Anm;
-                    case ".obj":
-                        return ScriptType.Obj;
-                    case ".scn":
-                        return ScriptType.Scn;
-                    case ".cam":
-                        return ScriptType.Cam;
-                    case ".tra":
-                        return ScriptType.Tra;
-                }
-                return ScriptType.Other;
-            }
-        }
+            ".anm" => ScriptType.Anm,
+            ".obj" => ScriptType.Obj,
+            ".scn" => ScriptType.Scn,
+            ".cam" => ScriptType.Cam,
+            ".tra" => ScriptType.Tra,
+            _ => ScriptType.Other,
+        };
     }
 }

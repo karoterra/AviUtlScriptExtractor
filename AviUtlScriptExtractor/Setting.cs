@@ -6,7 +6,7 @@ namespace AviUtlScriptExtractor
     class Setting
     {
         [JsonPropertyName("authors")]
-        public List<Author> Authors { get; set; }
+        public List<Author> Authors { get; } = new List<Author>();
 
         public void CompleteRead()
         {
@@ -25,8 +25,13 @@ namespace AviUtlScriptExtractor
 
             foreach (var author in Authors)
             {
+                if (author == null) continue;
+
                 foreach (var script in author.Scripts)
                 {
+                    if (script == null) continue;
+                    if (script.Name == null) continue;
+
                     scripts.Add(script.Name, script);
                 }
             }

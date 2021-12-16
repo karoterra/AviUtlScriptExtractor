@@ -14,7 +14,7 @@ namespace AviUtlScriptExtractor
     {
         static int Main(string[] args)
         {
-            if (args.Count() != 1)
+            if (args.Length != 1)
             {
                 Console.Error.WriteLine("ファイル名を指定してください");
                 Console.WriteLine("終了するにはEnterを押してください...");
@@ -41,18 +41,15 @@ namespace AviUtlScriptExtractor
                 return 1;
             }
             var json = File.ReadAllText(settingPath);
-            Setting setting = JsonSerializer.Deserialize<Setting>(json);
+            Setting setting = JsonSerializer.Deserialize<Setting>(json) ?? new Setting();
             setting.CompleteRead();
             var knownScripts = setting.GetScripts();
-            var usedScripts = new Dictionary<string, Script>();
+            var usedScripts = new Dictionary<string, Script?>();
 
             AviUtlProject project;
             try
             {
-                using (BinaryReader br = new BinaryReader(File.OpenRead(inputPath), sjis))
-                {
-                    project = new AviUtlProject(br);
-                }
+                project = new(inputPath);
             }
             catch (FileFormatException ex)
             {
@@ -71,11 +68,10 @@ namespace AviUtlScriptExtractor
                 return 1;
             }
 
-            ExEditProject exedit = null;
+            ExEditProject? exedit = null;
             for (int i = 0; i < project.FilterProjects.Count; i++)
             {
-                RawFilterProject filter = project.FilterProjects[i] as RawFilterProject;
-                if (filter != null && filter.Name == "拡張編集")
+                if (project.FilterProjects[i] is RawFilterProject filter && filter.Name == "拡張編集")
                 {
                     exedit = new ExEditProject(filter);
                     break;
@@ -130,7 +126,7 @@ namespace AviUtlScriptExtractor
                 }
             }
 
-            var outputDir = Path.GetDirectoryName(inputPath);
+            var outputDir = Path.GetDirectoryName(inputPath) ?? "";
             var outputFilename = $"{Path.GetFileNameWithoutExtension(inputPath)}_scripts.csv";
             var outputPath = Path.Combine(outputDir, outputFilename);
             using (var sw = new StreamWriter(outputPath, false, sjis))
@@ -158,12 +154,12 @@ namespace AviUtlScriptExtractor
             int index = name.IndexOf('@');
             if (index >= 0)
             {
-                name = name.Substring(index);
+                name = name[index..];
             }
             return $"{name}.{ext}";
         }
 
-        static void AddUsedScript(Dictionary<string, Script> known, Dictionary<string, Script> used, string name, ScriptType type)
+        static void AddUsedScript(Dictionary<string, Script> known, Dictionary<string, Script?> used, string name, ScriptType type)
         {
             var filename = GetScriptFilename(name, type);
             if (known.ContainsKey(filename))

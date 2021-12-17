@@ -10,8 +10,11 @@ namespace AviUtlScriptExtractor
         [Option('o', "out", HelpText = "出力するcsvファイルのパス")]
         public string? OutputPath { get; set; }
 
-        [Option("col", Separator = ',', HelpText = "出力する列名")]
-        public IEnumerable<string>? Columns { get; set; }
+        [Option("col", Separator = ',', HelpText = "出力する列名 (script|filename|type|author|nicoid|url|comment|count)")]
+        public IEnumerable<ColumnType>? Columns { get; set; }
+
+        [Option("header", HelpText = "ヘッダーの出力 (on|off|multi)")]
+        public HeaderType? Header { get; set; }
 
         public bool Validate()
         {
@@ -19,17 +22,6 @@ namespace AviUtlScriptExtractor
             {
                 Console.Error.WriteLine("入力ファイルと出力ファイルのパスが同じです。");
                 return false;
-            }
-            if (Columns != null)
-            {
-                foreach (var column in Columns)
-                {
-                    if (!Program.columns.Contains(column))
-                    {
-                        Console.Error.WriteLine("不明な列名が指定されました。");
-                        return false;
-                    }
-                }
             }
             return true;
         }

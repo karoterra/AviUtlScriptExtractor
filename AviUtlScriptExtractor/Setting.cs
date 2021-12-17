@@ -2,30 +2,53 @@
 
 namespace AviUtlScriptExtractor
 {
+    public enum ColumnType
+    {
+        Script = 0,
+        Filename,
+        Type,
+        Author,
+        NicoId,
+        Url,
+        Comment,
+        Count,
+    }
+
+    public enum HeaderType
+    {
+        On,
+        Off,
+        Multi,
+    }
+
     public class Setting
     {
+        private static readonly ColumnType[] defaultColumns =
+        {
+            ColumnType.Script,
+            ColumnType.Filename,
+            ColumnType.Type,
+            ColumnType.Author,
+            ColumnType.NicoId,
+            ColumnType.Url,
+            ColumnType.Comment,
+            ColumnType.Count,
+        };
+
         [JsonPropertyName("authors")]
         public List<AuthorSetting> Authors { get; set; } = new List<AuthorSetting>();
 
         [JsonPropertyName("columns")]
-        public List<string> Columns { get; set; } = Program.columns.ToList();
+        public List<ColumnType> Columns { get; set; } = defaultColumns.ToList();
+
+        [JsonPropertyName("header")]
+        public HeaderType Header { get; set; } = HeaderType.On;
 
         public bool Validate()
         {
             if (Columns.Count == 0)
             {
-                Columns = Program.columns.ToList();
-            }
-            else
-            {
-                foreach (var column in Columns)
-                {
-                    if (!Program.columns.Contains(column))
-                    {
-                        Console.Error.WriteLine("[setting.json]不明な列名が指定されました。");
-                        return false;
-                    }
-                }
+                Columns = defaultColumns.ToList();
             }
 
             return true;
@@ -40,6 +63,11 @@ namespace AviUtlScriptExtractor
                 {
                     Columns = cols;
                 }
+            }
+
+            if (opt.Header != null)
+            {
+                Header = opt.Header.Value;
             }
         }
 

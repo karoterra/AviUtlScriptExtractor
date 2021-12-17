@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Karoterra.AupDotNet;
 using Karoterra.AupDotNet.ExEdit;
 using Karoterra.AupDotNet.ExEdit.Effects;
@@ -9,13 +10,16 @@ namespace AviUtlScriptExtractor
 {
     class Program
     {
-        public static readonly string[] columns = { "script", "filename", "type", "author", "nicoid", "url", "comment", "count" };
-
         static int Main(string[] args)
         {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-            var res = Parser.Default.ParseArguments<Options>(args)
+            var parser = new Parser(conf =>
+            {
+                conf.HelpWriter = Console.Out;
+                conf.CaseInsensitiveEnumValues = true;
+            });
+            var res = parser.ParseArguments<Options>(args)
                 .MapResult(opt => Run(opt), err => 1);
             return res;
         }
@@ -61,7 +65,10 @@ namespace AviUtlScriptExtractor
                     Path.GetDirectoryName(opt.Filename) ?? string.Empty,
                     $"{Path.GetFileNameWithoutExtension(opt.Filename)}_scripts.csv");
             }
-            OutputCsv(opt.OutputPath, usedScripts, setting);
+            if (!OutputCsv(opt.OutputPath, usedScripts, setting))
+            {
+                return 1;
+            }
 
             return 0;
         }
@@ -73,12 +80,27 @@ namespace AviUtlScriptExtractor
             {
                 return new Setting();
             }
+
             var json = File.ReadAllText(settingPath);
             var options = new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true,
+                Converters =
+                {
+                    new JsonStringEnumConverter(),
+                }
             };
-            return JsonSerializer.Deserialize<Setting>(json, options) ?? new Setting();
+            try
+            {
+                return JsonSerializer.Deserialize<Setting>(json, options) ?? new Setting();
+            }
+            catch (JsonException e)
+            {
+                Console.Error.WriteLine("設定ファイルの読込時にエラーが発生しました。");
+                Console.Error.WriteLine(e.Message);
+                Console.Error.WriteLine("デフォルトの設定で動作します。");
+                return new Setting();
+            }
         }
 
         /// <summary>
@@ -199,7 +221,13 @@ namespace AviUtlScriptExtractor
             try
             {
                 using var sw = new StreamWriter(path);
-                sw.WriteLine(string.Join(',', setting.Columns));
+
+                if (setting.Header == HeaderType.On
+                    || (setting.Header == HeaderType.Multi && setting.Columns.Count > 1))
+                {
+                    sw.WriteLine(string.Join(',', setting.Columns).ToLower());
+                }
+
                 foreach (var script in scripts)
                 {
                     if (script == null) continue;
@@ -208,14 +236,14 @@ namespace AviUtlScriptExtractor
                     {
                         string elem = column switch
                         {
-                            "script" => script.Name,
-                            "filename" => script.Filename,
-                            "type" => script.Type.ToString().ToLower(),
-                            "author" => script.Author ?? string.Empty,
-                            "nicoid" => script.NicoId ?? string.Empty,
-                            "url" => script.Url ?? string.Empty,
-                            "comment" => script.Comment ?? string.Empty,
-                            "count" => script.Count.ToString(),
+                            ColumnType.Script => script.Name,
+                            ColumnType.Filename => script.Filename,
+                            ColumnType.Type => script.Type.ToString().ToLower(),
+                            ColumnType.Author => script.Author ?? string.Empty,
+                            ColumnType.NicoId => script.NicoId ?? string.Empty,
+                            ColumnType.Url => script.Url ?? string.Empty,
+                            ColumnType.Comment => script.Comment ?? string.Empty,
+                            ColumnType.Count => script.Count.ToString(),
                             _ => string.Empty,
                         };
                         elements.Add(elem);
@@ -233,7 +261,7 @@ namespace AviUtlScriptExtractor
                 Console.Error.WriteLine("出力パスが長すぎます。");
                 return false;
             }
-            catch (Exception e) when(
+            catch (Exception e) when (
                 e is ArgumentException or
                 ArgumentNullException or
                 DirectoryNotFoundException or

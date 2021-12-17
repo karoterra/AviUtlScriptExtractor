@@ -1,4 +1,19 @@
 {
+  "header": "on",
+  "columns": [
+    "script",
+    "filename",
+    "type",
+    "author",
+    "nicoid",
+    "url",
+    "comment",
+    "count"
+  ],
+  "sort": [
+    "COUNT",
+    "script"
+  ],
   "authors": [
     {
       "name": "karoterra",

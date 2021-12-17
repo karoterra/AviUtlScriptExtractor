@@ -42,6 +42,7 @@ namespace AviUtlScriptExtractor
         public List<ColumnType> Columns { get; set; } = defaultColumns.ToList();
 
         [JsonPropertyName("sort")]
+        [JsonConverter(typeof(StringsToOrderingItemsConverter))]
         public List<OrderingItem> Sort { get; set; } = new List<OrderingItem>();
 
         [JsonPropertyName("header")]

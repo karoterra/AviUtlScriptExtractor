@@ -25,5 +25,10 @@
             };
             Order = !column.Any(c => 'A' <= c && c <= 'Z');
         }
+
+        public override string ToString()
+        {
+            return Order ? Column.ToString().ToLower() : Column.ToString().ToUpper();
+        }
     }
 }

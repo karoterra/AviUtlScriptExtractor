@@ -59,12 +59,12 @@ namespace AviUtlScriptExtractor
 
         internal void MergeOptions(Options opt)
         {
-            if (opt.Columns != null && opt.Columns.Count() > 0)
+            if (opt.Columns.Any())
             {
                 Columns = opt.Columns.ToList();
             }
 
-            if (opt.Sort != null && opt.Sort.Count() > 0)
+            if (opt.Sort.Any())
             {
                 Sort = opt.Sort.ToList();
             }

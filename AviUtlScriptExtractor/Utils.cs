@@ -1,4 +1,5 @@
-﻿using Karoterra.AupDotNet.ExEdit;
+﻿using Karoterra.AupDotNet;
+using Karoterra.AupDotNet.ExEdit;
 using Karoterra.AupDotNet.ExEdit.Effects;
 
 namespace AviUtlScriptExtractor
@@ -51,6 +52,56 @@ namespace AviUtlScriptExtractor
                 name = name[index..];
             }
             return $"{name}.{ext}";
+        }
+
+        /// <summary>
+        /// aupファイルを読み込む
+        /// </summary>
+        /// <param name="path">aupファイルのパス</param>
+        /// <returns></returns>
+        public static AviUtlProject? ReadAup(string path)
+        {
+            AviUtlProject? aup = null;
+            try
+            {
+                aup = new AviUtlProject(path);
+            }
+            catch (FileNotFoundException)
+            {
+                Console.Error.WriteLine($"\"{path}\" が見つかりません。");
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Console.Error.WriteLine($"\"{path}\" はディレクトリであるか、アクセス許可がありません。");
+            }
+            catch (PathTooLongException)
+            {
+                Console.Error.WriteLine("パスが長すぎます。");
+            }
+            catch (Exception e) when (
+                e is ArgumentException or
+                ArgumentNullException or
+                DirectoryNotFoundException or
+                NotSupportedException)
+            {
+                Console.Error.WriteLine("有効なパスを指定してください。");
+            }
+            catch (FileFormatException e)
+            {
+                Console.Error.WriteLine($"\"{path}\" は AviUtl プロジェクトファイルでないか破損している可能性があります。");
+                Console.Error.WriteLine(e.Message);
+            }
+            catch (EndOfStreamException)
+            {
+                Console.Error.WriteLine($"\"{path}\" は AviUtl プロジェクトファイルでないか破損している可能性があります。");
+                Console.Error.WriteLine("ファイルの読み込み中に終端に達しました。");
+            }
+            catch (IOException)
+            {
+                Console.Error.WriteLine("IOエラーが発生しました。");
+            }
+
+            return aup;
         }
     }
 }

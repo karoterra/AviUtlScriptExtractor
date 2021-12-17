@@ -2,11 +2,84 @@
 
 namespace AviUtlScriptExtractor
 {
+    public enum ColumnType
+    {
+        Script = 0,
+        Filename,
+        Type,
+        Author,
+        NicoId,
+        Url,
+        Comment,
+        Count,
+    }
+
+    public enum HeaderType
+    {
+        On,
+        Off,
+        Multi,
+    }
+
     public class Setting
     {
+        private static readonly ColumnType[] defaultColumns =
+        {
+            ColumnType.Script,
+            ColumnType.Filename,
+            ColumnType.Type,
+            ColumnType.Author,
+            ColumnType.NicoId,
+            ColumnType.Url,
+            ColumnType.Comment,
+            ColumnType.Count,
+        };
+
         [JsonPropertyName("authors")]
         public List<AuthorSetting> Authors { get; set; } = new List<AuthorSetting>();
 
+        [JsonPropertyName("columns")]
+        public List<ColumnType> Columns { get; set; } = defaultColumns.ToList();
+
+        [JsonPropertyName("sort")]
+        [JsonConverter(typeof(StringsToOrderingItemsConverter))]
+        public List<OrderingItem> Sort { get; set; } = new List<OrderingItem>();
+
+        [JsonPropertyName("header")]
+        public HeaderType Header { get; set; } = HeaderType.On;
+
+        public bool Validate()
+        {
+            if (Columns.Count == 0)
+            {
+                Columns = defaultColumns.ToList();
+            }
+
+            return true;
+        }
+
+        internal void MergeOptions(Options opt)
+        {
+            if (opt.Columns.Any())
+            {
+                Columns = opt.Columns.ToList();
+            }
+
+            if (opt.Sort.Any())
+            {
+                Sort = opt.Sort.ToList();
+            }
+
+            if (opt.Header != null)
+            {
+                Header = opt.Header.Value;
+            }
+        }
+
+        /// <summary>
+        /// スクリプトの抽出時に使う既知のスクリプトの辞書の作成
+        /// </summary>
+        /// <returns>キー:ファイル名,値:ScriptData</returns>
         internal Dictionary<string, ScriptData> GetScripts()
         {
             var scripts = new Dictionary<string, ScriptData>();

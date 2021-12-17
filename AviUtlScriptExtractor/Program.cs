@@ -58,6 +58,7 @@ namespace AviUtlScriptExtractor
             }
 
             var usedScripts = ExtractScript(exedit, setting);
+            var sorted = SortScript(usedScripts, setting);
 
             if (string.IsNullOrEmpty(opt.OutputPath))
             {
@@ -65,7 +66,7 @@ namespace AviUtlScriptExtractor
                     Path.GetDirectoryName(opt.Filename) ?? string.Empty,
                     $"{Path.GetFileNameWithoutExtension(opt.Filename)}_scripts.csv");
             }
-            if (!OutputCsv(opt.OutputPath, usedScripts, setting))
+            if (!OutputCsv(opt.OutputPath, sorted, setting))
             {
                 return 1;
             }
@@ -216,7 +217,24 @@ namespace AviUtlScriptExtractor
             }
         }
 
-        static bool OutputCsv(string path, List<ScriptData> scripts, Setting setting)
+        static IEnumerable<ScriptData> SortScript(IEnumerable<ScriptData> scripts, Setting setting)
+        {
+            if (setting.Sort.Count == 0)
+                return scripts;
+
+            var sorted = setting.Sort[0].Order
+                ? scripts.OrderBy(s => s.GetValue(setting.Sort[0].Column))
+                : scripts.OrderByDescending(s => s.GetValue(setting.Sort[0].Column));
+            foreach (var item in setting.Sort.Skip(1))
+            {
+                sorted = item.Order
+                    ? sorted.ThenBy(s => s.GetValue(item.Column))
+                    : sorted.ThenByDescending(s => s.GetValue(item.Column));
+            }
+            return sorted;
+        }
+
+        static bool OutputCsv(string path, IEnumerable<ScriptData> scripts, Setting setting)
         {
             try
             {

@@ -41,6 +41,9 @@ namespace AviUtlScriptExtractor
         [JsonPropertyName("columns")]
         public List<ColumnType> Columns { get; set; } = defaultColumns.ToList();
 
+        [JsonPropertyName("sort")]
+        public List<OrderingItem> Sort { get; set; } = new List<OrderingItem>();
+
         [JsonPropertyName("header")]
         public HeaderType Header { get; set; } = HeaderType.On;
 
@@ -56,13 +59,14 @@ namespace AviUtlScriptExtractor
 
         internal void MergeOptions(Options opt)
         {
-            if (opt.Columns != null)
+            if (opt.Columns != null && opt.Columns.Count() > 0)
             {
-                var cols = opt.Columns.ToList();
-                if (cols.Count > 0)
-                {
-                    Columns = cols;
-                }
+                Columns = opt.Columns.ToList();
+            }
+
+            if (opt.Sort != null && opt.Sort.Count() > 0)
+            {
+                Sort = opt.Sort.ToList();
             }
 
             if (opt.Header != null)

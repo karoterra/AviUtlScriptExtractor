@@ -16,6 +16,22 @@
 
         public void Increment() => _count++;
 
+        public object GetValue(ColumnType column)
+        {
+            return column switch
+            {
+                ColumnType.Script => Name,
+                ColumnType.Filename => Filename,
+                ColumnType.Type => Type,
+                ColumnType.Author => Author ?? string.Empty,
+                ColumnType.NicoId => NicoId ?? string.Empty,
+                ColumnType.Url => Url ?? string.Empty,
+                ColumnType.Comment => Comment ?? string.Empty,
+                ColumnType.Count => Count,
+                _ => 0,
+            };
+        }
+
         public ScriptData Clone()
         {
             return new ScriptData

@@ -264,6 +264,9 @@ namespace AviUtlScriptExtractor
                             ColumnType.Count => script.Count.ToString(),
                             _ => string.Empty,
                         };
+                        elem = elem.Replace("\"", "\"\"");
+                        if (elem.Contains(',') || elem.Contains('"'))
+                            elem = $"\"{elem}\"";
                         elements.Add(elem);
                     }
                     sw.WriteLine(string.Join(',', elements));

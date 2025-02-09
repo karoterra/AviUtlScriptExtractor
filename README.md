@@ -9,9 +9,9 @@
 から最新版の ZIP ファイルをダウンロードし、好きな場所に展開してください。
 
 - `AviUtlScriptExtractor-<バージョン>-win64-fd.zip`
-  - .NET 6 ランタイムをインストール済みの場合
+  - .NET 8 ランタイムをインストール済みの場合
 - `AviUtlScriptExtractor-<バージョン>-win64-sc.zip`
-  - .NET 6 ランタイムをインストールせずに使う場合
+  - .NET 8 ランタイムをインストールせずに使う場合
   - よく分からないがとにかく使いたい場合
 
 アンインストール時には展開したフォルダを削除してください。
@@ -32,7 +32,7 @@ AviUtl プロジェクトファイル（*.aup）を`AviUtlScriptExtractor.exe`�
 ### コンソールから使う場合
 ```
 > AviUtlScriptExtractor --help
-AviUtlScriptExtractor 0.3.0
+AviUtlScriptExtractor 0.4.0
 Copyright © 2021 karoterra
 USAGE:
 通常:
